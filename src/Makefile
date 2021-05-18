@@ -3,9 +3,11 @@ PREFIX=./build
 all: dummy main
 
 dummy: dummy_func.c
+	mkdir -p ${PREFIX}/lib
 	clang dummy_func.c -c -o ${PREFIX}/lib/libdummy.a
 
 main: dummy main.c
+	mkdir -p ${PREFIX}/bin
 	clang -flto -fuse-ld=lld  \
 		-Wl,-mllvm=-load=../pass/build/libDummyPassLTO.so \
 		-Wl,--save-temps \
