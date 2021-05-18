@@ -1,4 +1,4 @@
-This doc and reproduce code can be found [here](https://github.com/DataCorrupted/llvm-codegen-bug)
+This doc and reproduce code can be found [here](https://github.com/DataCorrupted/llc-func-removal-report)
 
 # llc function call removal bug
 
