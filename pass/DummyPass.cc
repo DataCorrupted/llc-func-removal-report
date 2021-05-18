@@ -8,22 +8,12 @@
 #include <utility>
 
 // LLVM
-#include "llvm/ADT/DenseSet.h"
-#include "llvm/ADT/SmallPtrSet.h"
-#include "llvm/ADT/Statistic.h"
-#include "llvm/Analysis/ValueTracking.h"
-#include "llvm/IR/DebugInfo.h"
-#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LegacyPassManager.h"
-#include "llvm/IR/MDBuilder.h"
 #include "llvm/IR/Module.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Utils/BasicBlockUtils.h"
 
 using namespace llvm;
 namespace {
@@ -32,7 +22,8 @@ class DummyPass : public ModulePass {
  public:
   static char ID;
 
-  FunctionCallee DummyFunc;
+  FunctionCallee DummyFuncIcmp;
+  FunctionCallee DummyFuncGetc;
 
   void initVariables(Module &M);
   DummyPass() : ModulePass(ID) {}
@@ -54,31 +45,34 @@ void DummyPass::initVariables(Module &M) {
                          Attribute::NoUnwind);
     AL = AL.addAttribute(M.getContext(), AttributeList::FunctionIndex,
                          Attribute::ReadOnly);
-    DummyFunc = M.getOrInsertFunction("dummy_func", DummyFuncTy, AL);
+    DummyFuncIcmp = M.getOrInsertFunction("dummy_func_icmp", DummyFuncTy, AL);
+    DummyFuncGetc = M.getOrInsertFunction("dummy_func_getc", DummyFuncTy, AL);
   }
 };
 
 bool DummyPass::runOnModule(Module &M) {
-  errs() << "Dummy pass";
+  errs() << "Dummy pass\n";
   initVariables(M);
 
   for (auto &F : M) {
     std::vector<BasicBlock *> bb_list;
     for (auto bb = F.begin(); bb != F.end(); bb++) bb_list.push_back(&(*bb));
 
-    for (auto bi = bb_list.begin(); bi != bb_list.end(); bi++) {
-      BasicBlock *BB = *bi;
-      std::vector<Instruction *> inst_list;
-
+    std::vector<Instruction *> inst_list;
+    for (BasicBlock *BB : bb_list) {
       for (auto inst = BB->begin(); inst != BB->end(); inst++) {
-        Instruction *Inst = &(*inst);
-        inst_list.push_back(Inst);
+        inst_list.push_back(&(*inst));
       }
+    }
 
-      for (auto inst = inst_list.begin(); inst != inst_list.end(); inst++) {
-        Instruction *Inst = *inst;
-        IRBuilder<> IRB(Inst);
-        CallInst *rand_call = IRB.CreateCall(DummyFunc, {});
+    for (Instruction *Inst : inst_list) {
+      IRBuilder<> IRB(Inst);
+      if (isa<CmpInst>(Inst)) {
+        CallInst *rand_call = IRB.CreateCall(DummyFuncIcmp, {});
+      } else if (CallInst *call = dyn_cast<CallInst>(Inst)) {
+        if (call->getCalledFunction()->getName() == "_IO_getc") {
+          CallInst *rand_call = IRB.CreateCall(DummyFuncGetc, {});
+        }
       }
     }
   }
@@ -90,15 +84,15 @@ static void registerDummyPass(const PassManagerBuilder &,
   PM.add(new DummyPass());
 }
 
-#ifdef LTO
 static RegisterPass<DummyPass> X("dummy_pass", "Dummy Pass", false, false);
 
 static RegisterStandardPasses RegisterDummyPass(
     PassManagerBuilder::EP_FullLinkTimeOptimizationLast, registerDummyPass);
-#else
+
+/*
 static RegisterStandardPasses RegisterDummyPass(
     PassManagerBuilder::EP_OptimizerLast, registerDummyPass);
 
 static RegisterStandardPasses RegisterDummyPass0(
     PassManagerBuilder::EP_EnabledOnOptLevel0, registerDummyPass);
-#endif
+*/
