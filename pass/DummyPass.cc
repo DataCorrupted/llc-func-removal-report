@@ -54,7 +54,7 @@ void DummyPass::initVariables(Module &M) {
                          Attribute::NoUnwind);
     AL = AL.addAttribute(M.getContext(), AttributeList::FunctionIndex,
                          Attribute::ReadOnly);
-    DummyFunc = M.getOrInsertFunction("__dummy_func", DummyFuncTy, AL);
+    DummyFunc = M.getOrInsertFunction("dummy_func", DummyFuncTy, AL);
   }
 };
 
@@ -77,7 +77,6 @@ bool DummyPass::runOnModule(Module &M) {
 
       for (auto inst = inst_list.begin(); inst != inst_list.end(); inst++) {
         Instruction *Inst = *inst;
-        errs() << *Inst << "\n";
         IRBuilder<> IRB(Inst);
         CallInst *rand_call = IRB.CreateCall(DummyFunc, {});
       }
