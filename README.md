@@ -1,17 +1,19 @@
+This doc and reproduce code can be found [here](https://github.com/DataCorrupted/llvm-codegen-bug)
+
 # llc function call removal bug
 
 ## Summary
 
 When instrumenting function calls, all of them are instrumented correctly in LLVM IR.
 But __SOME__ of the function calls are removed when generating assembly(before linking).
-These function calls some 3rd party library that's not present until linking, therefore, it should be optimized out.
+These function calls are in 3rd party library and are not present until linking, therefore, they shouldn't be optimized out.
 I couldn't figure out what is the criteria for such removal.
 
 ## Scope
 
 The bug can be reproduced in Ubuntu 1604 and 1804, using any LLVM > 10.0.0.
 
-The demo included uses a docker environmen for easier debugging, it runs in Ubuntu 1604 and LLVM 11.1.0.
+The demo included uses a docker environment for easier debugging, it runs in Ubuntu 1604 and LLVM 11.1.0.
 
 ## Reproduce
 
@@ -28,7 +30,7 @@ cd src
 make test
 ```
 
-The final lines of output should look like:
+The final lines of output should look like this:
 
 ```
 llvm-dis ./build/bin/main.0.5.precodegen.bc 
@@ -50,11 +52,11 @@ When executing main-pm:
 dummy_func called before _IO_getc().
 ```
 
-Indicating that 3 function calls are inserted to LLVM IR, only one remain in assembly and binary.
+Indicating that 3 function calls are inserted to LLVM IR, only one remains in assembly and binary.
 
 ## Code description
 
-The example code here show one example.
+The example code here shows one example.
 The pass is fairly simple, for each ICMP instruction, instrument a function call to `dummy_func_icmp` beforehand; for `getc` function call, instrument a call to `dummy_func_getc`.
 
 Both `char dummy_func_*()` functions are copmiled into a 3rd library and linked to the program later.
@@ -68,7 +70,7 @@ But when generating assembly using `llc` and executing final binary, only one `d
 
 ## Thoughts
 
-Here's some possible reasons that I don't think is possible:
+Here are some possible reasons that I have ruled as impossible.
 
-1. It's assembler's optimizer. However, assembler haven't seem what `dummy_func*` look like, so there is no reason it should remove a 3rd library function call.
+1. It's the asssembler's optimizer. However, the assembler hasn't seen what `dummy_func*` looks like, so there is no reason it should remove a 3rd library function call.
 2. It's LTO. I used LTO for easier bitcode and assembly generation, as shown in `make main-pm`, even use legacy pass mamager in earlier stages, the generated binray still only have ONE instrumented function instead of three.
