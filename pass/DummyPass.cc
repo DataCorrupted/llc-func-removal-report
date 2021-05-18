@@ -84,15 +84,15 @@ static void registerDummyPass(const PassManagerBuilder &,
   PM.add(new DummyPass());
 }
 
+#ifdef LTO
 static RegisterPass<DummyPass> X("dummy_pass", "Dummy Pass", false, false);
 
 static RegisterStandardPasses RegisterDummyPass(
     PassManagerBuilder::EP_FullLinkTimeOptimizationLast, registerDummyPass);
-
-/*
+#else
 static RegisterStandardPasses RegisterDummyPass(
     PassManagerBuilder::EP_OptimizerLast, registerDummyPass);
 
 static RegisterStandardPasses RegisterDummyPass0(
     PassManagerBuilder::EP_EnabledOnOptLevel0, registerDummyPass);
-*/
+#endif
