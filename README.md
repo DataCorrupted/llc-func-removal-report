@@ -2,6 +2,17 @@ This doc and reproduce code can be found [here](https://github.com/DataCorrupted
 
 # llc function call removal bug
 
+## Fix
+
+The problem is that the function attribute shouldn't be readonly.
+
+DO NOT add ReadOnly attribute to instrumented functions. Assemblier may remove these calls.
+See more details in [here](https://llvm.org/docs/LangRef.html#function-attributes)
+
+However, the actual result is more un-predictable. You may find it in SelectionDAGISel::SelectAllBasicBlocks(Fn).
+This function is in llvm/lib/CodeGen/SelectionDAGISel.cpp, it shows how LLVM IR is transformed
+into Machine Code.
+
 ## Summary
 
 When instrumenting function calls, all of them are instrumented correctly in LLVM IR.

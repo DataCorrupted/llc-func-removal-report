@@ -43,8 +43,8 @@ void DummyPass::initVariables(Module &M) {
     AttributeList AL;
     AL = AL.addAttribute(M.getContext(), AttributeList::FunctionIndex,
                          Attribute::NoUnwind);
-    AL = AL.addAttribute(M.getContext(), AttributeList::FunctionIndex,
-                         Attribute::ReadOnly);
+    // AL = AL.addAttribute(M.getContext(), AttributeList::FunctionIndex,
+    //                      Attribute::ReadOnly);
     DummyFuncIcmp = M.getOrInsertFunction("dummy_func_icmp", DummyFuncTy, AL);
     DummyFuncGetc = M.getOrInsertFunction("dummy_func_getc", DummyFuncTy, AL);
   }
